@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Sneypsleep90/go-url-shortner/internal/domain"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -57,6 +59,9 @@ func (s *Storage) GetUrlByCode(ctx context.Context, code string) (domain.Link, e
 		&link.OriginalUrl,
 	)
 
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.Link{}, domain.ErrLinkNotFound
+	}
 	if err != nil {
 		return domain.Link{}, err
 	}
