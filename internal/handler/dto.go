@@ -1,7 +1,7 @@
 package handler
 
 type createLinkRequest struct {
-	OriginalURL string `json:"original_url" binding:"required,http_url"`
+	OriginalURL string `json:"original_url" binding:"required,excludes= ,http_url"`
 }
 
 type linkResponse struct {

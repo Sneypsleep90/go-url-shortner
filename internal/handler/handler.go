@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/Sneypsleep90/go-url-shortner/internal/domain"
@@ -23,7 +24,9 @@ func (h *Handler) CreateCode(c *gin.Context) {
 
 	var request createLinkRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		message := requestErrorMessage(err)
+		c.Error(fmt.Errorf("%s: %w", message, err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": message})
 		return
 	}
 
@@ -43,6 +46,7 @@ func (h *Handler) CreateCode(c *gin.Context) {
 func (h *Handler) GetUrlByCode(c *gin.Context) {
 	link, err := h.service.GetUrlByCode(c.Request.Context(), c.Param("code"))
 	if errors.Is(err, domain.ErrNotFound) {
+		c.Error(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "link not found"})
 		return
 	}
