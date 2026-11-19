@@ -16,13 +16,10 @@ const (
 type Config struct {
 	HTTPAddr    string
 	StorageType string
-	DataBaseUrl string
+	DatabaseURL string
 }
 
-func Load() (
-	*Config,
-	error,
-) {
+func Load() (*Config, error) {
 	if err := godotenv.Load(); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("load .env: %w", err)
 	}
@@ -30,7 +27,7 @@ func Load() (
 	cfg := Config{
 		HTTPAddr:    os.Getenv("HTTP_ADDR"),
 		StorageType: os.Getenv("STORAGE_TYPE"),
-		DataBaseUrl: os.Getenv("DB_URL"),
+		DatabaseURL: os.Getenv("DB_URL"),
 	}
 
 	if cfg.HTTPAddr == "" {
@@ -43,7 +40,7 @@ func Load() (
 	switch cfg.StorageType {
 	case StorageMemory:
 	case StoragePostgres:
-		if cfg.DataBaseUrl == "" {
+		if cfg.DatabaseURL == "" {
 			return nil, errors.New("DB_URL is required when using PostgreSQL storage")
 		}
 	default:

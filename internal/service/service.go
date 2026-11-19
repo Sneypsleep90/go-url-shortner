@@ -41,7 +41,7 @@ func (s *Service) CreateCode(ctx context.Context, link domain.Link) (domain.Link
 	return domain.Link{}, fmt.Errorf("create link after %d attempts: %w", maxCodeAttempts, domain.ErrCodeTaken)
 }
 
-func (s *Service) GetUrlByCode(ctx context.Context, code string) (domain.Link, error) {
+func (s *Service) GetURLByCode(ctx context.Context, code string) (domain.Link, error) {
 	link, err := s.repo.GetByCode(ctx, code)
 	if err != nil {
 		return domain.Link{}, fmt.Errorf("get link by code: %w", err)

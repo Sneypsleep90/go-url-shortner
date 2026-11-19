@@ -8,5 +8,5 @@ import (
 
 type LinkService interface {
 	CreateCode(ctx context.Context, link domain.Link) (domain.Link, error)
-	GetUrlByCode(ctx context.Context, code string) (domain.Link, error)
+	GetURLByCode(ctx context.Context, code string) (domain.Link, error)
 }

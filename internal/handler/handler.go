@@ -43,8 +43,8 @@ func (h *Handler) CreateCode(c *gin.Context) {
 	})
 }
 
-func (h *Handler) GetUrlByCode(c *gin.Context) {
-	link, err := h.service.GetUrlByCode(c.Request.Context(), c.Param("code"))
+func (h *Handler) GetURLByCode(c *gin.Context) {
+	link, err := h.service.GetURLByCode(c.Request.Context(), c.Param("code"))
 	if errors.Is(err, domain.ErrNotFound) {
 		c.Error(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "link not found"})

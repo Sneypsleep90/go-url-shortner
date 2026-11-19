@@ -42,7 +42,7 @@ func run() error {
 	case config.StorageMemory:
 		repo = memory.New()
 	case config.StoragePostgres:
-		pool, err := pgxpool.New(ctx, cfg.DataBaseUrl)
+		pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 		if err != nil {
 			return fmt.Errorf("create postgres pool: %w", err)
 		}
@@ -54,7 +54,7 @@ func run() error {
 			return fmt.Errorf("connect to postgres: %w", err)
 		}
 
-		repo = postgres.NewPgStorage(pool)
+		repo = postgres.New(pool)
 	default:
 		return fmt.Errorf("unsupported storage type: %q", cfg.StorageType)
 	}
