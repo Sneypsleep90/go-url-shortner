@@ -25,14 +25,14 @@ func (h *Handler) CreateCode(c *gin.Context) {
 	var request createLinkRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		message := requestErrorMessage(err)
-		c.Error(fmt.Errorf("%s: %w", message, err))
+		_ = c.Error(fmt.Errorf("%s: %w", message, err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": message})
 		return
 	}
 
 	link, err := h.service.CreateCode(c.Request.Context(), domain.Link{OriginalURL: request.OriginalURL})
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
@@ -46,12 +46,12 @@ func (h *Handler) CreateCode(c *gin.Context) {
 func (h *Handler) GetURLByCode(c *gin.Context) {
 	link, err := h.service.GetURLByCode(c.Request.Context(), c.Param("code"))
 	if errors.Is(err, domain.ErrNotFound) {
-		c.Error(err)
+		_ = c.Error(err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "link not found"})
 		return
 	}
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}

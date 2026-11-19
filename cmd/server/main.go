@@ -82,7 +82,11 @@ func serve(ctx context.Context, addr string, router http.Handler, logger *slog.L
 		ReadHeaderTimeout: 5 * time.Second,
 		ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
-	defer server.Close()
+	defer func() {
+		if err := server.Close(); err != nil {
+			logger.Error("close HTTP server", slog.Any("error", err))
+		}
+	}()
 
 	serverErr := make(chan error, 1)
 	go func() {
