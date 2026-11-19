@@ -2,4 +2,7 @@ package domain
 
 import "errors"
 
-var ErrLinkNotFound = errors.New("link not found")
+var (
+	ErrNotFound  = errors.New("link not found")
+	ErrCodeTaken = errors.New("short code already exists")
+)

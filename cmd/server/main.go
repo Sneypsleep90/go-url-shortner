@@ -13,6 +13,7 @@ import (
 	"github.com/Sneypsleep90/go-url-shortner/internal/config"
 	"github.com/Sneypsleep90/go-url-shortner/internal/handler"
 	"github.com/Sneypsleep90/go-url-shortner/internal/service"
+	"github.com/Sneypsleep90/go-url-shortner/internal/storage/memory"
 	"github.com/Sneypsleep90/go-url-shortner/internal/storage/postgres"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -29,26 +30,31 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
-	if cfg.StorageType != config.StoragePostgres {
-		return fmt.Errorf("storage %q is not implemented yet", cfg.StorageType)
-	}
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	pool, err := pgxpool.New(ctx, cfg.DataBaseUrl)
-	if err != nil {
-		return fmt.Errorf("create postgres pool: %w", err)
-	}
-	defer pool.Close()
+	var repo service.LinkRepo
+	switch cfg.StorageType {
+	case config.StorageMemory:
+		repo = memory.New()
+	case config.StoragePostgres:
+		pool, err := pgxpool.New(ctx, cfg.DataBaseUrl)
+		if err != nil {
+			return fmt.Errorf("create postgres pool: %w", err)
+		}
+		defer pool.Close()
 
-	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	if err := pool.Ping(pingCtx); err != nil {
-		return fmt.Errorf("connect to postgres: %w", err)
+		pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		if err := pool.Ping(pingCtx); err != nil {
+			return fmt.Errorf("connect to postgres: %w", err)
+		}
+
+		repo = postgres.NewPgStorage(pool)
+	default:
+		return fmt.Errorf("unsupported storage type: %q", cfg.StorageType)
 	}
 
-	repo := postgres.NewPgStorage(pool)
 	svc := service.NewService(repo)
 	h := handler.NewHandler(svc)
 

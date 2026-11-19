@@ -6,6 +6,7 @@ import (
 
 	"github.com/Sneypsleep90/go-url-shortner/internal/domain"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -17,10 +18,12 @@ func NewPgStorage(pool *pgxpool.Pool) *Storage {
 	return &Storage{pool: pool}
 }
 
-func (s *Storage) CreateCode(ctx context.Context, link domain.Link) (domain.Link, error) {
+func (s *Storage) Create(ctx context.Context, link domain.Link) (domain.Link, error) {
 	query := `
     INSERT INTO links (short_code, original_url)
     VALUES ($1, $2)
+    ON CONFLICT (original_url)
+    DO UPDATE SET original_url = EXCLUDED.original_url
     RETURNING short_code, original_url
 `
 	var res domain.Link
@@ -29,12 +32,16 @@ func (s *Storage) CreateCode(ctx context.Context, link domain.Link) (domain.Link
 		ctx,
 		query,
 		link.ShortCode,
-		link.OriginalUrl,
+		link.OriginalURL,
 	).Scan(
 		&res.ShortCode,
-		&res.OriginalUrl,
+		&res.OriginalURL,
 	)
 
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return domain.Link{}, domain.ErrCodeTaken
+	}
 	if err != nil {
 		return domain.Link{}, err
 	}
@@ -42,7 +49,7 @@ func (s *Storage) CreateCode(ctx context.Context, link domain.Link) (domain.Link
 	return res, nil
 }
 
-func (s *Storage) GetUrlByCode(ctx context.Context, code string) (domain.Link, error) {
+func (s *Storage) GetByCode(ctx context.Context, code string) (domain.Link, error) {
 	query := `
 	SELECT short_code, original_url 
 	FROM links 
@@ -56,11 +63,11 @@ func (s *Storage) GetUrlByCode(ctx context.Context, code string) (domain.Link, e
 		code,
 	).Scan(
 		&link.ShortCode,
-		&link.OriginalUrl,
+		&link.OriginalURL,
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.Link{}, domain.ErrLinkNotFound
+		return domain.Link{}, domain.ErrNotFound
 	}
 	if err != nil {
 		return domain.Link{}, err

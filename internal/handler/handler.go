@@ -27,7 +27,7 @@ func (h *Handler) CreateCode(c *gin.Context) {
 		return
 	}
 
-	link, err := h.service.CreateCode(c.Request.Context(), domain.Link{OriginalUrl: request.OriginalURL})
+	link, err := h.service.CreateCode(c.Request.Context(), domain.Link{OriginalURL: request.OriginalURL})
 	if err != nil {
 		c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -36,13 +36,13 @@ func (h *Handler) CreateCode(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, linkResponse{
 		ShortCode:   link.ShortCode,
-		OriginalURL: link.OriginalUrl,
+		OriginalURL: link.OriginalURL,
 	})
 }
 
 func (h *Handler) GetUrlByCode(c *gin.Context) {
 	link, err := h.service.GetUrlByCode(c.Request.Context(), c.Param("code"))
-	if errors.Is(err, domain.ErrLinkNotFound) {
+	if errors.Is(err, domain.ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "link not found"})
 		return
 	}
@@ -54,6 +54,6 @@ func (h *Handler) GetUrlByCode(c *gin.Context) {
 
 	c.JSON(http.StatusOK, linkResponse{
 		ShortCode:   link.ShortCode,
-		OriginalURL: link.OriginalUrl,
+		OriginalURL: link.OriginalURL,
 	})
 }

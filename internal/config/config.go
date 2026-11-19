@@ -44,7 +44,7 @@ func Load() (
 	case StorageMemory:
 	case StoragePostgres:
 		if cfg.DataBaseUrl == "" {
-			return nil, errors.New("DATABASE_URL is required when using PostgreSQL storage")
+			return nil, errors.New("DB_URL is required when using PostgreSQL storage")
 		}
 	default:
 		return nil, fmt.Errorf("unsupported STORAGE_TYPE: %q", cfg.StorageType)
