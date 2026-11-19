@@ -3,7 +3,9 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/Sneypsleep90/go-url-shortner/internal/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -19,21 +21,20 @@ func NewPgStorage(pool *pgxpool.Pool) *Storage {
 }
 
 func (s *Storage) Create(ctx context.Context, link domain.Link) (domain.Link, error) {
-	query := `
-    INSERT INTO links (short_code, original_url)
-    VALUES ($1, $2)
-    ON CONFLICT (original_url)
-    DO UPDATE SET original_url = EXCLUDED.original_url
-    RETURNING short_code, original_url
-`
-	var res domain.Link
+	query, args, err := sq.Insert("links").
+		Columns("short_code", "original_url").
+		Values(link.ShortCode, link.OriginalURL).
+		Suffix("ON CONFLICT (original_url) DO UPDATE SET original_url = EXCLUDED.original_url").
+		Suffix("RETURNING short_code, original_url").
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
 
-	err := s.pool.QueryRow(
-		ctx,
-		query,
-		link.ShortCode,
-		link.OriginalURL,
-	).Scan(
+	if err != nil {
+		return domain.Link{}, fmt.Errorf("build create link query: %w", err)
+	}
+
+	var res domain.Link
+	err = s.pool.QueryRow(ctx, query, args...).Scan(
 		&res.ShortCode,
 		&res.OriginalURL,
 	)
@@ -50,18 +51,17 @@ func (s *Storage) Create(ctx context.Context, link domain.Link) (domain.Link, er
 }
 
 func (s *Storage) GetByCode(ctx context.Context, code string) (domain.Link, error) {
-	query := `
-	SELECT short_code, original_url 
-	FROM links 
-	WHERE short_code = $1
-`
+	query, args, err := sq.Select("short_code", "original_url").
+		From("links").
+		Where(sq.Eq{"short_code": code}).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		return domain.Link{}, fmt.Errorf("build get link query: %w", err)
+	}
 
 	var link domain.Link
-	err := s.pool.QueryRow(
-		ctx,
-		query,
-		code,
-	).Scan(
+	err = s.pool.QueryRow(ctx, query, args...).Scan(
 		&link.ShortCode,
 		&link.OriginalURL,
 	)
