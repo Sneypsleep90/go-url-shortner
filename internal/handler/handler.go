@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/Sneypsleep90/go-url-shortner/internal/domain"
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,14 @@ func (h *Handler) CreateCode(c *gin.Context) {
 	if err := c.ShouldBindJSON(&request); err != nil {
 		message := requestErrorMessage(err)
 		_ = c.Error(fmt.Errorf("%s: %w", message, err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": message})
+		return
+	}
+
+	parsedURL, err := url.Parse(request.OriginalURL)
+	if err != nil || parsedURL.Hostname() == "" {
+		message := "original_url must be valid HTTP or HTTPS URL"
+		_ = c.Error(errors.New(message))
 		c.JSON(http.StatusBadRequest, gin.H{"error": message})
 		return
 	}
